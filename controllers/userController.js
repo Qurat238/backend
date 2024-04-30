@@ -5,7 +5,7 @@ import sendToken from "../utils/jwttoken.js";
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import cloudinary from "cloudinary";
-import fs from "fs";
+// import fs from "fs";
 
 //Register a user
 export const registerUser = catchAsyncErrors(async(req,res,next) => {
@@ -26,7 +26,7 @@ export const registerUser = catchAsyncErrors(async(req,res,next) => {
         crop:"scale",
     });
     
-    fs.rmSync("./tmp", { recursive: true });
+    // fs.rmSync("./tmp", { recursive: true });
 
     user = await User.create({
         name,
