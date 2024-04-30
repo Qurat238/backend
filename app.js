@@ -3,6 +3,8 @@ import errorMiddleware from "./middleware/error.js";
 import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import { dirname, join, resolve } from 'path';
 
 const app = express();
 app.use(express.json());
@@ -40,6 +42,16 @@ app.get("/",(req,res) => {
 
 //Middleware for errors
 app.use(errorMiddleware);
+
+/*----------------------------------------Deployment---------------------------------------------*/
+
+// To run frontend and backend on same port
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use(express.static(join(__dirname, "./frontend/build")));
+app.get("*",(req,res) => {
+    res.sendFile(resolve(__dirname, "./frontend/build/index.html"));
+});
 
 
 export default app;
