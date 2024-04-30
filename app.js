@@ -4,8 +4,8 @@ import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import dotenv from "dotenv";
 import cors from "cors";
-import { fileURLToPath } from 'url';
-import { dirname, join, resolve } from 'path';
+// import { fileURLToPath } from 'url';
+// import { dirname, join, resolve } from 'path';
 
 const app = express();
 app.use(express.json());
@@ -14,8 +14,8 @@ app.use(cookieParser());
 //Middleware
 app.use(
     fileUpload({
-      limits: { fileSize: 50 * 1024 * 1024 },
-      useTempFiles: true,
+      // limits: { fileSize: 50 * 1024 * 1024 },
+      // useTempFiles: true,
     })
   );
 app.use(cors());
@@ -47,12 +47,12 @@ app.use(errorMiddleware);
 /*----------------------------------------Deployment---------------------------------------------*/
 
 // To run frontend and backend on same port
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-app.use(express.static(join(__dirname, "./frontend/build")));
-app.get("*",(req,res) => {
-    res.sendFile(resolve(__dirname, "./frontend/build/index.html"));
-});
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+// app.use(express.static(join(__dirname, "./frontend/build")));
+// app.get("*",(req,res) => {
+//     res.sendFile(resolve(__dirname, "./frontend/build/index.html"));
+// });
 
 
 export default app;
