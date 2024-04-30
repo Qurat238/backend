@@ -3,6 +3,7 @@ import errorMiddleware from "./middleware/error.js";
 import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import dotenv from "dotenv";
+import cors from "cors";
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 
