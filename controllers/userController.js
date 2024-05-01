@@ -10,12 +10,14 @@ import cloudinary from "cloudinary";
 export const registerUser = catchAsyncErrors(async(req,res,next) => {
 
     const {name, email, password} = req.body;
-    const avatar = req.files.avatar.tempFilePath;
+    
     let user = await User.findOne({email});
 
     if(user){
         return next(new ErrorHandler("User Already Exists", 400));
     }
+
+    const avatar = req.files.avatar.tempFilePath;
 
     const myCloud = await cloudinary.v2.uploader.upload(avatar);
 
