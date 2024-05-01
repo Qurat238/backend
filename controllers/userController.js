@@ -17,9 +17,16 @@ export const registerUser = catchAsyncErrors(async(req,res,next) => {
         return next(new ErrorHandler("User Already Exists", 400));
     }
 
-    const avatar = req.files.avatar.tempFilePath;
+    const avatar = req.files.avatar;
+    const avatarBuffer = avatar.data.toString('base64')
 
-    const myCloud = await cloudinary.v2.uploader.upload(avatar);
+    const myCloud = await cloudinary.uploader.upload(`data:${avatar.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' }, (error, result) => {
+        if (error) {
+          console.error('Error uploading image to Cloudinary:', error);
+        } else {
+          console.log('Image uploaded successfully:', result);
+        }
+      });
 
     user = await User.create({
         name,

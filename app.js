@@ -12,12 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 //Middleware
-app.use(
-    fileUpload({
-      limits: { fileSize: 50 * 1024 * 1024 },
-      useTempFiles: true,
-    })
-  );
+app.use(fileUpload({}));
 app.use(cors());
 
 
