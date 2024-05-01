@@ -14,8 +14,8 @@ app.use(cookieParser());
 //Middleware
 app.use(
     fileUpload({
-      // limits: { fileSize: 50 * 1024 * 1024 },
-      // useTempFiles: true,
+      limits: { fileSize: 50 * 1024 * 1024 },
+      useTempFiles: true,
     })
   );
 app.use(cors());

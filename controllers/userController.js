@@ -5,23 +5,22 @@ import sendToken from "../utils/jwttoken.js";
 import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import cloudinary from "cloudinary";
+import fs from "fs";
 
 //Register a user
 export const registerUser = catchAsyncErrors(async(req,res,next) => {
 
     const {name, email, password} = req.body;
-
+    const avatar = req.files.avatar.tempFilePath;
     let user = await User.findOne({email});
 
     if(user){
         return next(new ErrorHandler("User Already Exists", 400));
     }
 
-    const myCloud = await cloudinary.v2.uploader.upload(req.files.avatar.name, {
-        folder: "avatars",
-        width:150,
-        crop:"scale",
-    });
+    const myCloud = await cloudinary.v2.uploader.upload(avatar);
+
+    fs.rmSync("./tmp", { recursive: true });
 
     user = await User.create({
         name,
