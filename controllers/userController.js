@@ -89,7 +89,7 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({validateBeforeSave:false});
 
-    const resetPasswordUrl = `https://calm-blue-yak.cyclic.app/password/reset/${resetToken}`;
+    const resetPasswordUrl = `https://backend-gray-sigma.vercel.app/password/reset/${resetToken}`;
     const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email, then please just ignore it.`;
 
     try {
