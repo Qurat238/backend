@@ -176,11 +176,16 @@ export const updateProfile = catchAsyncErrors(async(req,res,next) => {
         const user = await User.findById(req.user.id);
         const imageId = user.avatar.public_id;
         await cloudinary.v2.uploader.destroy(imageId);
-        const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-            folder: "avatars",
-            width:150,
-            crop:"scale",
-        });
+        const avatar = req.files.avatar;
+    const avatarBuffer = avatar.data.toString('base64')
+
+    const myCloud = await cloudinary.uploader.upload(`data:${avatar.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' }, (error, result) => {
+        if (error) {
+          console.error('Error uploading image to Cloudinary:', error);
+        } else {
+          console.log('Image uploaded successfully:', result);
+        }
+      });
         newUserData.avatar = {
             public_id:myCloud.public_id,
             url:myCloud.secure_url,
