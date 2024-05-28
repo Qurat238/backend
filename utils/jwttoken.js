@@ -1,6 +1,6 @@
 //Creating token and saving in cookie
 
-const sendToken = (user, statusCode, res, message) => {
+const sendToken = (user, statusCode, res) => {
     const token = user.getJWTToken();
 
     //Options for cookie
@@ -11,18 +11,10 @@ const sendToken = (user, statusCode, res, message) => {
         httpOnly:true
     };
 
-    const userData = {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        verified: user.verified,
-      };
-
     res.status(statusCode).cookie("token", token, options).json({
         success:true,
-        user:userData,
-        message
+        user,
+        token,
     });
 }
 
