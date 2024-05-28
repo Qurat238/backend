@@ -3,7 +3,6 @@ import validator from "validator";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-
 const userSchema = new mongoose.Schema({
     name: {
         type:String,
@@ -41,14 +40,8 @@ const userSchema = new mongoose.Schema({
         type:Date,
         default:Date.now 
     },
-    verified: {
-        type: Boolean,
-        default: false,
-    },
-    otp:Number,
-    otp_expiry: Date,
-    resetPasswordOtp:Number,
-    resetPasswordOtpExpiry:Date,
+    resetPasswordToken:String,
+    resetPasswordExpire:Date,
 });
 
 userSchema.pre("save", async function(next){
@@ -58,19 +51,16 @@ userSchema.pre("save", async function(next){
     this.password = await bcryptjs.hash(this.password, 10);
   
 });
-
 //JWT Token
 userSchema.methods.getJWTToken = function (){
     return jwt.sign({id:this._id}, process.env.JWT_SECRET,{
         expiresIn: process.env.JWT_EXPIRE,
     });
 }
-
 //Compare Password
 userSchema.methods.comparePassword = async function(enteredPassword){
     return await bcryptjs.compare(enteredPassword, this.password);
 }
-
 //Generating Password Reset Token
 userSchema.methods.getResetPasswordToken = function(){
     //Generating Token
@@ -81,5 +71,4 @@ userSchema.methods.getResetPasswordToken = function(){
     this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
     return resetToken;
 }
-
 export default mongoose.model("User", userSchema);
