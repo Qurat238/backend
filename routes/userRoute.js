@@ -5,8 +5,9 @@ import { isAuthenticatedUser, authorizeRoles } from "../middleware/auth.js";
 
 
 router.post("/register",registerUser);
+router.route("/verify").post(isAuthenticatedUser, verify);
 router.post("/login",loginUser);
-router.put("/password/reset/:token",resetPassword);
+router.put("/password/reset",resetPassword);
 router.post("/password/forgot",forgotPassword);
 router.get("/me",isAuthenticatedUser , getUserDetails);
 router.put("/password/update",isAuthenticatedUser , updatePassword);

@@ -17,8 +17,10 @@ export const registerUser = catchAsyncErrors(async(req,res,next) => {
         return next(new ErrorHandler("User Already Exists", 400));
     }
 
+    const otp = Math.floor(Math.random() * 1000000);
+
     const avatar = req.files.avatar;
-    const avatarBuffer = avatar.data.toString('base64')
+    const avatarBuffer = avatar.data.toString('base64');
 
     const myCloud = await cloudinary.uploader.upload(`data:${avatar.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' }, (error, result) => {
         if (error) {
@@ -36,11 +38,47 @@ export const registerUser = catchAsyncErrors(async(req,res,next) => {
             public_id: myCloud.public_id,
             url: myCloud.secure_url,
         },
-
+        otp,
+        otp_expiry: new Date(Date.now() + process.env.OTP_EXPIRE * 60 * 1000),
     });
 
-   sendToken(user,201,res);
+    const message = `Your OTP is ${otp}`;
+
+    try {
+        await sendEmail({
+            email:user.email,
+            subject:`Verify your account`,
+            message
+        });
+        sendToken(user,201,res, "OTP sent to your email, please verify your account");
+    } catch (error) {
+        await user.save({validateBeforeSave:false});
+        return next(new ErrorHandler(error.message, 500));
+    }
+
 });
+
+
+// Verify
+export const verify = async (req, res) => {
+      const otp = Number(req.body.otp);
+      const user = await User.findById(req.user.id);
+  
+      if (user.otp !== otp || user.otp_expiry < Date.now()) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid OTP or has been Expired" });
+      }
+  
+      user.verified = true;
+      user.otp = null;
+      user.otp_expiry = null;
+  
+      await user.save();
+  
+      sendToken(user, 200, res, "Account Verified");
+  };
+
 
 //Login a user
 export const loginUser = catchAsyncErrors(async(req,res,next) => {
@@ -63,7 +101,7 @@ export const loginUser = catchAsyncErrors(async(req,res,next) => {
         return next(new ErrorHandler("Invalid Email or Password", 401));
     }
 
-    sendToken(user, 200, res);
+    sendToken(user, 200, res, "Logged In Successfully");
 });
 
 //Logout a user
@@ -85,55 +123,57 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
     if(!user){
         return next(new ErrorHandler("User not found", 404));
     }
-    //Get Reset Password Token
-    const resetToken = user.getResetPasswordToken();
-    await user.save({validateBeforeSave:false});
 
-    const resetPasswordUrl = `https://backend-gray-sigma.vercel.app/password/reset/${resetToken}`;
-    const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email, then please just ignore it.`;
+    const otp = Math.floor(Math.random() * 1000000);
+
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpiry = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    const message = `Your OTP for reseting the password ${otp}. If you did not request for this, please ignore this email.`;
+
+    await sendEmail({email:user.email, subject:"Request for Reseting Password", message});
+
+    sendToken(user,200,res, `OTP sent to ${email}`);
 
     try {
         await sendEmail({
             email:user.email,
-            subject:`Ecommerce Password Recovery`,
+            subject:`Request for Reseting Password`,
             message
         });
-        res.status(200).json({
-            success:true,
-            message:`Email sent to ${user.email} successfully`
-        });
+        sendToken(user,200,res, `OTP sent to ${email}`);
     } catch (error) {
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordOtpExpiry = undefined;
         await user.save({validateBeforeSave:false});
         return next(new ErrorHandler(error.message, 500));
-        
     }
 });
 
 //Reset Passowrd
 export const resetPassword = catchAsyncErrors(async(req,res,next) => {
 
+    const { otp, newPassword } = req.body;
+
     //Creating token hashed
     const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
 
     const user = await User.findOne({
-        resetPasswordToken,
-        resetPasswordExpire: { $gt:Date.now() }
+        resetPasswordOtp: otp,
+        resetPasswordOtpExpiry: { $gt:Date.now() }
     });
     
     if(!user){
-        return next(new ErrorHandler("Reset Password Token in invalid or has been expired", 400));
+        return next(new ErrorHandler("Reset Password Otp in invalid or has been expired", 400));
     }
 
-    if(req.body.password !== req.body.confirmPassword){
-        return next(new ErrorHandler("Password does not match", 400));
-    }
-    user.password = req.body.password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.password = newPassword;
+    user.resetPasswordOtp = null;
+    user.resetPasswordOtpExpiry = null;
     await user.save();
-    sendToken(user,200,res);
+    sendToken(user,200,res, "Password Changed Successfully");
 });
 
 //Get User Detail
@@ -162,7 +202,7 @@ export const updatePassword = catchAsyncErrors(async(req,res,next) => {
     user.password = req.body.newPassword;
     await user.save();
 
-    sendToken(user, 200, res);
+    sendToken(user, 200, res, "Password Updated Successfully");
 });
 
 //Update User Profile
