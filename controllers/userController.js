@@ -78,8 +78,7 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({validateBeforeSave:false});
 
-    const resetPasswordUrl = `https://backend-gray-sigma.vercel.app/password/reset/${resetToken}`;
-    const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email, then please just ignore it.`;
+    const message = `Your password reset token is :- \n\n ${resetToken} \n\nIf you have not requested this email, then please just ignore it.`;
 
     try {
         await sendEmail({
@@ -104,7 +103,7 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
 export const resetPassword = catchAsyncErrors(async(req,res,next) => {
 
     //Creating token hashed
-    const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+    const resetPasswordToken = crypto.createHash("sha256").update(req.body.token).digest("hex");
 
     const user = await User.findOne({
         resetPasswordToken,
