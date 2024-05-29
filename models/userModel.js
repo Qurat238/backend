@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
         type:Date,
         default:Date.now 
     },
-    resetPasswordToken:Number,
+    resetPasswordToken:String,
     resetPasswordExpire:Date,
 });
 
