@@ -8,7 +8,7 @@ import cloudinary from "cloudinary";
 export const createProduct = catchAsyncErrors(async(req,res,next) => {
     let images = [];
     const avatars = req.files.images.map(file => {
-        const avatarBuffer = file.buffer.toString('base64');
+        const avatarBuffer = file.data.toString('base64');
         return cloudinary.uploader.upload(`data:${file.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' });
     });
 
