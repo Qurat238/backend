@@ -7,22 +7,18 @@ import cloudinary from "cloudinary";
 //Create Products -- Admin
 export const createProduct = catchAsyncErrors(async(req,res,next) => {
     let images = [];
-    if(typeof req.body.images === 'string'){
-        images.push(req.body.images);
-    } else {
-        images = req.body.images;
-    }
-    const imagesLinks = [];
-    for(let i=0 ; i < images.length ; i++){
-        const result = await cloudinary.v2.uploader.upload(images[i],{
-            folder:"products",
-        });
-        imagesLinks.push({
-            public_id: result.public_id,
-            url: result.secure_url,
-        });
-    }
-    req.body.images = imagesLinks;
+    const avatars = req.files.map(file => {
+        const avatarBuffer = file.buffer.toString('base64');
+        return cloudinary.uploader.upload(`data:${file.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' });
+    });
+
+    const uploadedAvatars = await Promise.all(avatars);
+
+    const avatarUrls = uploadedAvatars.map(avatar => ({
+        public_id: avatar.public_id,
+        url: avatar.secure_url,
+    }));
+    req.body.images = avatarUrls;
     req.body.user = req.user.id;
     const product = await Product.create(req.body);
 
