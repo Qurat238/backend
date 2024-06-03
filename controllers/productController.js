@@ -17,7 +17,7 @@ export const createProduct = catchAsyncErrors(async(req,res,next) => {
         public_id: avatar.public_id,
         url: avatar.secure_url,
     }));
-    req.files.images = avatarUrls;
+    req.body.images = avatarUrls;
     req.body.user = req.user.id;
     const product = await Product.create(req.body);
 
