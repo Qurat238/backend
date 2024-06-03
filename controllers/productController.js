@@ -6,7 +6,6 @@ import cloudinary from "cloudinary";
 
 //Create Products -- Admin
 export const createProduct = catchAsyncErrors(async(req,res,next) => {
-    let images = [];
     const avatars = req.files.images.map(file => {
         const avatarBuffer = file.data.toString('base64');
         return cloudinary.uploader.upload(`data:${file.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' });
