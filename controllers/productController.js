@@ -70,49 +70,44 @@ export const getSingleProduct = catchAsyncErrors(async(req,res,next) => {
 });
 
 //Update Product -- Admin
-export const updateProduct = catchAsyncErrors(async(req,res,next) => {
+export const updateProduct = catchAsyncErrors(async (req, res, next) => {
     let product = await Product.findById(req.params.id);
 
-    if(!product){
-        return next(new ErrorHandler("Product not found",404));
+    if (!product) {
+        return next(new ErrorHandler("Product not found", 404));
     }
 
-    //Images Start Here
-    let images = [];
-    if(typeof req.body.images === 'string'){
-        images.push(req.body.images);
-    } else {
-        images = req.body.images;
-    }
-    if(images !== undefined){
-        //Deleting Images from cloudinary
-        for( let i=0; i < product.images.length; i++){
-            await cloudinary.v2.uploader.destroy(product.images[i].public_id);
-        }
-        const imagesLinks = [];
-        for(let i=0 ; i < images.length ; i++){
-            const result = await cloudinary.v2.uploader.upload(images[i],{
-                folder:"products",
-            });
-            imagesLinks.push({
-                public_id: result.public_id,
-                url: result.secure_url,
-            });
-        }
-        req.body.images = imagesLinks;
+    const avatars = req.files.images.map(file => {
+        const avatarBuffer = file.data.toString('base64');
+        return cloudinary.uploader.upload(`data:${file.mimetype};base64,${avatarBuffer}`, { resource_type: 'auto' });
+    });
+
+    const uploadedAvatars = await Promise.all(avatars);
+
+    const avatarUrls = uploadedAvatars.map(avatar => ({
+        public_id: avatar.public_id,
+        url: avatar.secure_url,
+    }));
+
+    // Delete old images from Cloudinary
+    for (let i = 0; i < product.images.length; i++) {
+        await cloudinary.uploader.destroy(product.images[i].public_id);
     }
 
-    product = await Product.findByIdAndUpdate(req.params.id, req.body,{
-        new:true,
-        runValidators:true,
-        useFindAndModify:false
+    req.body.images = avatarUrls;
+
+    product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false
     });
 
     res.status(200).json({
-        success:true,
+        success: true,
         product
-    })
+    });
 });
+
 
 //Delete Product -- Admin
 export const deleteProduct = catchAsyncErrors(async(req,res,next)=>{
