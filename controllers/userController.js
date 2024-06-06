@@ -74,11 +74,15 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
     if(!user){
         return next(new ErrorHandler("User not found", 404));
     }
-    //Get Reset Password Token
-    const resetToken = user.getResetPasswordToken();
-    await user.save({validateBeforeSave:false});
+    
+    const otp = Math.floor(Math.random() * 1000000);
+    
+    user.resetPasswordToken = otp;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
-    const message = `Your password reset token is :- \n\n ${resetToken} \n\nIf you have not requested this email, then please just ignore it.`;
+    await user.save();
+
+    const message = `Your OTP for reseting the password ${otp}. If you did not request for this, please ignore this email.`;
 
     try {
         await sendEmail({
@@ -91,9 +95,9 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
             message:`Email sent to ${user.email} successfully`
         });
     } catch (error) {
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
-        await user.save({validateBeforeSave:false});
+        user.resetPasswordToken = null;
+        user.resetPasswordExpire = null;
+        await user.save();
         return next(new ErrorHandler(error.message, 500));
 
     }
@@ -102,24 +106,23 @@ export const forgotPassword = catchAsyncErrors(async(req,res,next) => {
 //Reset Passowrd
 export const resetPassword = catchAsyncErrors(async(req,res,next) => {
 
-    //Creating token hashed
-    const resetPasswordToken = crypto.createHash("sha256").update(req.body.token).digest("hex");
+    const { otp, password, confirmPassword } = req.body;
 
     const user = await User.findOne({
-        resetPasswordToken,
+        resetPasswordToken: otp,
         resetPasswordExpire: { $gt:Date.now() }
     });
 
     if(!user){
-        return next(new ErrorHandler("Reset Password Token in invalid or has been expired", 400));
+        return next(new ErrorHandler("Reset Password Otp in invalid or has been expired", 400));
     }
 
     if(req.body.password !== req.body.confirmPassword){
         return next(new ErrorHandler("Password does not match", 400));
     }
-    user.password = req.body.password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.password = password;
+    user.resetPasswordOtp = null;
+    user.resetPasswordExpiry = null;
     await user.save();
     sendToken(user,200,res);
 });
